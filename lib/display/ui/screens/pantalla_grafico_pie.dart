@@ -1,63 +1,56 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:visualizador_charts/data/models/pie_model.dart';
+import 'package:visualizador_charts/data/repositories/pie_repository.dart';
+import 'package:visualizador_charts/display/ui/components/input_grafico.dart';
+import 'package:visualizador_charts/display/ui/utils/utils.dart';
 
 class PantallaGraficoPie extends StatefulWidget {
   const PantallaGraficoPie({super.key});
 
   @override
-  _PantallaGraficoPieState createState() => _PantallaGraficoPieState();
+  State<PantallaGraficoPie> createState() => _PantallaGraficoPieState();
 }
 
 class _PantallaGraficoPieState extends State<PantallaGraficoPie> {
   final TextEditingController _etiquetaController = TextEditingController();
   final TextEditingController _valorController = TextEditingController();
 
-  List<String> etiquetas = [];
-  List<double> valores = [];
+  PieModel? _pieModel;
 
   @override
   void initState() {
     super.initState();
-    _cargarDatos();
-  }
-
-  Future<void> _cargarDatos() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      etiquetas = prefs.getStringList('etiquetas') ?? [];
-      valores = prefs.getStringList('valores')?.map((e) => double.parse(e)).toList() ?? [];
+      _pieModel = pieRepository.obtenerDatosPie();
     });
   }
 
-  Future<void> _guardarDatos() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('etiquetas', etiquetas);
-    prefs.setStringList('valores', valores.map((e) => e.toString()).toList());
-  }
-
   void _agregarValor() {
-    String etiqueta = _etiquetaController.text.trim();
-    double? valor = double.tryParse(_valorController.text);
+    final etiqueta = _etiquetaController.text.trim();
+    final valor = double.tryParse(_valorController.text);
 
     if (etiqueta.isNotEmpty && valor != null) {
       setState(() {
-        etiquetas.add(etiqueta);
-        valores.add(valor);
+        _pieModel!.etiquetas.add(etiqueta);
+        _pieModel!.valores.add(valor);
       });
-      _guardarDatos();
+
+      pieRepository.guardarDatosPie(_pieModel!);
       _etiquetaController.clear();
       _valorController.clear();
     }
   }
 
   void _borrarUltimo() {
-    if (etiquetas.isNotEmpty && valores.isNotEmpty) {
+    if (_pieModel!.etiquetas.isNotEmpty && _pieModel!.valores.isNotEmpty) {
       setState(() {
-        etiquetas.removeLast();
-        valores.removeLast();
+        _pieModel!.etiquetas.removeLast();
+        _pieModel!.valores.removeLast();
       });
-      _guardarDatos();
+
+      pieRepository.guardarDatosPie(_pieModel!);
     }
   }
 
@@ -67,8 +60,8 @@ class _PantallaGraficoPieState extends State<PantallaGraficoPie> {
       appBar: AppBar(
         title: const Text('Gráfico de Pie'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context), // Regresar al menú principal
+          icon: Icon(CupertinoIcons.back), // ✅ Ícono estilo iOS
+          onPressed: () => Navigator.pop(context), // Volver al menú principal
         ),
       ),
       body: Column(
@@ -76,11 +69,11 @@ class _PantallaGraficoPieState extends State<PantallaGraficoPie> {
           Expanded(
             child: PieChart(
               PieChartData(
-                sections: valores.asMap().entries.map((entry) {
+                sections: _pieModel!.valores.asMap().entries.map((entry) {
                   int index = entry.key;
                   return PieChartSectionData(
                     value: entry.value,
-                    title: etiquetas[index],
+                    title: _pieModel!.etiquetas[index],
                     color: Colors.primaries[index % Colors.primaries.length],
                     radius: 80,
                   );
@@ -92,14 +85,17 @@ class _PantallaGraficoPieState extends State<PantallaGraficoPie> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                TextField(
+                InputGrafico(
+                  label: 'Etiqueta',
                   controller: _etiquetaController,
-                  decoration: InputDecoration(labelText: "Etiqueta"),
+                  autocorrect: false,
+                  textInputType: TextInputType.text,
                 ),
-                TextField(
+                InputGrafico(
+                  label: 'Valor',
                   controller: _valorController,
-                  decoration: InputDecoration(labelText: "Valor"),
-                  keyboardType: TextInputType.number,
+                  autocorrect: false,
+                  textInputType: TextInputType.number,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,

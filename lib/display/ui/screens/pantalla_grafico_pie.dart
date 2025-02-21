@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:visualizador_charts/data/models/pie_model.dart';
 import 'package:visualizador_charts/data/repositories/pie_repository.dart';
 import 'package:visualizador_charts/display/ui/components/input_grafico.dart';
-import 'package:visualizador_charts/display/ui/utils/utils.dart';
+import 'package:visualizador_charts/display/ui/utils/utils.dart'; // ✅ Importación agregada
 
 class PantallaGraficoPie extends StatefulWidget {
   const PantallaGraficoPie({super.key});
@@ -17,13 +17,18 @@ class _PantallaGraficoPieState extends State<PantallaGraficoPie> {
   final TextEditingController _etiquetaController = TextEditingController();
   final TextEditingController _valorController = TextEditingController();
 
-  PieModel? _pieModel;
+  PieModel _pieModel = PieModel(etiquetas: [], valores: []); // ✅ Inicializa el modelo para evitar null
 
   @override
   void initState() {
     super.initState();
+    _cargarDatos();
+  }
+
+  void _cargarDatos() async {
+    final datosPie = await pieRepository.obtenerDatosPie();
     setState(() {
-      _pieModel = pieRepository.obtenerDatosPie();
+      _pieModel = datosPie;
     });
   }
 
@@ -33,24 +38,24 @@ class _PantallaGraficoPieState extends State<PantallaGraficoPie> {
 
     if (etiqueta.isNotEmpty && valor != null) {
       setState(() {
-        _pieModel!.etiquetas.add(etiqueta);
-        _pieModel!.valores.add(valor);
+        _pieModel.etiquetas.add(etiqueta);
+        _pieModel.valores.add(valor);
       });
 
-      pieRepository.guardarDatosPie(_pieModel!);
+      pieRepository.guardarDatosPie(_pieModel);
       _etiquetaController.clear();
       _valorController.clear();
     }
   }
 
   void _borrarUltimo() {
-    if (_pieModel!.etiquetas.isNotEmpty && _pieModel!.valores.isNotEmpty) {
+    if (_pieModel.etiquetas.isNotEmpty && _pieModel.valores.isNotEmpty) {
       setState(() {
-        _pieModel!.etiquetas.removeLast();
-        _pieModel!.valores.removeLast();
+        _pieModel.etiquetas.removeLast();
+        _pieModel.valores.removeLast();
       });
 
-      pieRepository.guardarDatosPie(_pieModel!);
+      pieRepository.guardarDatosPie(_pieModel);
     }
   }
 
@@ -69,12 +74,12 @@ class _PantallaGraficoPieState extends State<PantallaGraficoPie> {
           Expanded(
             child: PieChart(
               PieChartData(
-                sections: _pieModel!.valores.asMap().entries.map((entry) {
+                sections: _pieModel.valores.asMap().entries.map((entry) {
                   int index = entry.key;
                   return PieChartSectionData(
                     value: entry.value,
-                    title: _pieModel!.etiquetas[index],
-                    color: Colors.primaries[index % Colors.primaries.length],
+                    title: _pieModel.etiquetas[index],
+                    color: PieModel.getColor(_pieModel.etiquetas[index]), // ✅ Color corregido
                     radius: 80,
                   );
                 }).toList(),

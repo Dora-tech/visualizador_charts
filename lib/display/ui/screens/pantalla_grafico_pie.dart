@@ -60,7 +60,7 @@ class _PantallaGraficoPieState extends State<PantallaGraficoPie> {
       appBar: AppBar(
         title: const Text('Gráfico de Pie'),
         leading: IconButton(
-          icon: Icon(CupertinoIcons.back), // ✅ Ícono estilo iOS
+          icon: Icon(Icons.arrow_back, color: Colors.black, size: 28), //  Ícono estilo iOS
           onPressed: () => Navigator.pop(context), // Volver al menú principal
         ),
       ),
